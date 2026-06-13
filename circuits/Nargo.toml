@@ -1,0 +1,12 @@
+[package]
+name = "circuits"
+type = "bin"
+authors = [""]
+
+# Shared cross-circuit hash helpers (reconstruct_leaf, compute_nullifier,
+# compute_merkle_root) + HEIGHT, vendored from the pampalo monorepo so the
+# swap circuit stays byte-for-byte in lockstep with deposit / transfer /
+# withdraw on tree layout and the note-commitment / nullifier schemes.
+[dependencies]
+poseidon = { tag = "v0.3.0", git = "https://github.com/noir-lang/poseidon" }
+pum_lib = { path = "../../private-pampalo/circuits/pum_lib" }
