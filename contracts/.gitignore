@@ -1,0 +1,13 @@
+node_modules
+dist
+
+# Hardhat
+cache
+artifacts
+# TypeChain bindings — regenerated on every `hardhat compile`
+types/
+ignition/deployments
+
+# Env
+.env
+.env.local
