@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import type hre from "hardhat";
 import Poseidon2HuffJson from "@pampalo/contracts/contracts/utils/Poseidon2Huff.json" with { type: "json" };
-import { BASE, USDC_BALANCE_SLOT } from "./constants.js";
+import { BASE, USDC_BALANCE_SLOT, type Venue } from "./constants.js";
 
 type Connection = Awaited<ReturnType<typeof hre.network.connect>>;
 
@@ -11,22 +11,26 @@ export interface SwapFixture {
   connection: Connection;
   e: any;
   deployer: ethers.Signer;
-  contract: ethers.Contract; // PampaloSwap or PampaloSwapHarness
+  venue: Venue;
+  contract: ethers.Contract; // PampaloSwapV4/V3 (or its harness)
   swapAddr: string;
   swapVerifier: string;
   usdc: ethers.Contract;
   weth: ethers.Contract;
 }
 
-// Deploy PampaloSwap (or its test harness) wired to Base's v4 PoolManager,
-// the Poseidon huff hasher, and USDC/WETH as supported assets. The four
-// base verifiers are always mocks (unused on the swap path); the swap
-// verifier is the real bb-generated SwapVerifier when `realVerifier`, else
-// a mock that accepts any proof (for v4-mechanics tests).
+// Deploy PampaloSwapV4/V3 (or its harness) wired to the chosen venue (Base's
+// v4 PoolManager or v3 SwapRouter), the Poseidon huff hasher, and USDC/WETH
+// as supported assets. Both venue constructors share the shape
+// (4 base verifiers, venueAddr, swapVerifier). The four base verifiers are
+// always mocks (unused on the swap path); the swap verifier is the real
+// bb-generated SwapVerifier when `realVerifier`, else a mock that accepts any
+// proof (for mechanics tests).
 export async function deploySwapFixture(
   connection: Connection,
-  opts: { harness?: boolean; realVerifier?: boolean } = {},
+  opts: { venue?: Venue; harness?: boolean; realVerifier?: boolean } = {},
 ): Promise<SwapFixture> {
+  const venue = opts.venue ?? "v4";
   const e = connection.ethers;
   const [deployer] = await e.getSigners();
 
@@ -52,15 +56,17 @@ export async function deploySwapFixture(
     swapVerifier = await sv.getAddress();
   }
 
+  const baseName = venue === "v4" ? "PampaloSwapV4" : "PampaloSwapV3";
+  const venueAddr = venue === "v4" ? BASE.POOL_MANAGER : BASE.V3_ROUTER;
   const PS = await e.getContractFactory(
-    opts.harness ? "PampaloSwapHarness" : "PampaloSwap",
+    opts.harness ? `${baseName}Harness` : baseName,
   );
   const contract = await PS.deploy(
     mockAddr, // depositVerifier
     mockAddr, // transferVerifier
     mockAddr, // withdrawVerifier
     mockAddr, // transferExternalVerifier
-    BASE.POOL_MANAGER,
+    venueAddr,
     swapVerifier,
   );
   await contract.waitForDeployment();
@@ -83,6 +89,7 @@ export async function deploySwapFixture(
     connection,
     e,
     deployer,
+    venue,
     contract,
     swapAddr,
     swapVerifier,

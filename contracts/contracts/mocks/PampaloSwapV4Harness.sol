@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import {PampaloSwap} from "../PampaloSwap.sol";
+import {PampaloSwapV4} from "../PampaloSwapV4.sol";
 
-/// @title PampaloSwapHarness
-/// @notice Test-only: exposes a direct leaf insert so the round-trip swap
-///         test can seed a real input note into the tree without driving
-///         the full shield → executeShield flow (production's only insert
-///         path). The privateSwap path under test is otherwise untouched.
-///         NEVER deploy to a live network.
-contract PampaloSwapHarness is PampaloSwap {
+/// @title PampaloSwapV4Harness
+/// @notice Test-only: exposes a direct leaf insert so round-trip tests can
+///         seed a real input note without driving the full shield flow
+///         (production's only insert path). NEVER deploy to a live network.
+contract PampaloSwapV4Harness is PampaloSwapV4 {
     constructor(
         address _depositVerifier,
         address _transferVerifier,
@@ -18,7 +16,7 @@ contract PampaloSwapHarness is PampaloSwap {
         address _poolManager,
         address _swapVerifier
     )
-        PampaloSwap(
+        PampaloSwapV4(
             _depositVerifier,
             _transferVerifier,
             _withdrawVerifier,
